@@ -1,11 +1,11 @@
-# sklearn_workshop
+# sklearn workshop
 practical machine learning with Scikit-learn
 
-requirments:
+## requirements:
 numpy
 pandas
 matplotlib
 seaborn
 sklearn
 
-see requirments.txt
+see requirements.txt
