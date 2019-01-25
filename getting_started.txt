@@ -1,0 +1,19 @@
+## see if you have pip and python installed
+
+$ python --version
+$ pip --version
+
+## create and start the virtual environment
+
+$ pip install virtualenv
+$ virtualenv my_virtual_space
+$ source my_virtual_space/bin/activate
+
+## goto dir containing requirements.txt from the repo and install packages
+
+$ pip install requirements.txt
+
+## can delete the virtual space if you'd like
+
+$ deactivate
+$ rm -rf my_virtual_space/
