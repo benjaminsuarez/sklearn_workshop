@@ -50,8 +50,6 @@ print(knn.predict(X_new))
 #' lets also compare training accuracy using different values of K.
 
 from sklearn import metrics
-print(metrics.accuracy_score(y,y_pred))
-
 knn = KNeighborsClassifier(n_neighbors = 5)
 knn.fit(X,y)
 y_pred = knn.predict(X)
