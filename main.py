@@ -3,30 +3,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 from sklearn.datasets import load_iris
-
-iris = load_iris()
-print(dir(iris))
-
-
-iris_df = pd.DataFrame(iris.data,columns = iris.feature_names)
-
-
-ads = pd.read_csv("http://www-bcf.usc.edu/~gareth/ISL/Advertising.csv", index_col=0)
-feature_cols = ['TV', 'radio', 'newspaper']
-X = data[feature_cols]
-y = data.sales
-
-boston_dataset = load_boston()
-boston = pd.DataFrame(boston_dataset.data, columns=boston_dataset.feature_names)
-boston.head()
-boston['MEDV'] = boston_dataset.target
-
-
-Irish = pd.read_csv("https://raw.githubusercontent.com/benjaminsuarez/sklearn_workshop/master/PPR-ALL.csv")
-
-
-###
-
 iris = load_iris()
 
 #' each row is an observation, each column is a feature
