@@ -419,7 +419,7 @@ print(grid.predict([[3, 5, 4, 2]]))
 #' It can get computationally intensive to perform an exhaustiv tune.
 #' RandomizedGridCV solves this
 #' it searches only a random subset of the provided parameters. can effectively decide how long you want it to run for
-# with RandomizedGridCV you provide a parameter distribution rather than a grid. lets do that.
+#' with RandomizedGridCV you provide a parameter distribution rather than a grid. lets do that.
 
 from sklearn.model_selection import RandomizedSearchCV
 param_dist = dict(n_neighbors=k_range, weights=weight_options)
@@ -429,8 +429,8 @@ rand.fit(X, y)
 print(pd.DataFrame(rand.cv_results_)[['mean_test_score', 'std_test_score', 'params']])
 print(rand.best_score_)
 print(rand.best_params_)
-# run RandomizedSearchCV 20 times (with n_iter=10) and record the best score
-# most of the time it's able to find the best if not closest to the best
+#' run RandomizedSearchCV 20 times (with n_iter=10) and record the best score
+#' most of the time it's able to find the best if not closest to the best
 
 best_scores = []
 for _ in range(20):
@@ -438,3 +438,150 @@ for _ in range(20):
     rand.fit(X, y)
     best_scores.append(round(rand.best_score_, 3))
 print(best_scores)
+
+
+#' lets explore a classification problem more in depth using a diabetes dataset.
+#' the original dataset was used to predict diabetes based on diagnostic measurements, using data collected from pima native americans.
+import pandas as pd
+path = 'https://raw.githubusercontent.com/benjaminsuarez/sklearn_workshop/master/diabetes.csv'
+pima = pd.read_csv(path)
+
+#' lets try to predict the diabetes status of a patient given their health measurements
+
+#' define X and y
+feature_cols = ['Pregnancies', 'Insulin', 'BMI', 'Age']
+X = pima[feature_cols]
+y = pima.Outcome
+#' split X and y into training and testing sets
+from sklearn.model_selection import train_test_split
+X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
+#' train a logistic regression model on the training set
+from sklearn.linear_model import LogisticRegression
+logreg = LogisticRegression()
+logreg.fit(X_train, y_train)
+#' make class predictions for the testing set
+y_pred_class = logreg.predict(X_test)
+from sklearn import metrics
+print(metrics.accuracy_score(y_test, y_pred_class))
+
+#' beware: whenever using classification accuracy as evaluation metric, need to compare it to its null accuracy, which is the accuracy that could be achieved by always predicting the most frequent class in the testing set.
+#' null accuracy says, if I model were to predict the most dominant all the time, how often would it be correct
+
+#' null accuracy calculation:
+#' examine the class distribution of the testing set (using a Pandas Series method)
+print(y_test.value_counts()) # this is known as the class distribution
+print(y_test.mean()) # calculate the percentage of ones
+print(1 - y_test.mean()) # calculate the percentage of zeros
+print(max(y_test.mean(), 1 - y_test.mean())) # calculate null accuracy (for binary classification problems coded as 0/1)
+#' calculate null accuracy (for multi-class classification problems)
+print(y_test.value_counts().head(1) / len(y_test) )
+
+#' this highlights one weaknes of test accurracy as a model evaluation metric. It doesn't tell us anything about the underlying distribution of the testing set.
+
+#' another weakness, when true is a zero, model almost always predicts zero, but when true value is one, model rarely predicts a one. it makes certain types of errors, but not others.
+#' ie. it doesn't tell you what type of errors it makes
+print('True:', y_test.values[0:25])
+print('Pred:', y_pred_class[0:25])
+#' this issue is remedied through the use of a confusion matrix
+
+#' confusion matrix:
+#' NB! first argument: true values, second argument: predicted values
+print(metrics.confusion_matrix(y_test, y_pred_class))
+
+#' True Positives (TP): we correctly predicted  they do have diabetes
+#' True Negatives (TN): we correctly predicted  they don't have diabetes
+#' False Positives (FP): we incorrectly predicted  they do have diabetes (a "Type I error")
+#' False Negatives (FN): we incorrectly predicted  they don't have diabetes (a "Type II error")
+
+#' note, confusion matrix is not an evaluation metric so cannot be used to choose model.
+confusion = metrics.confusion_matrix(y_test, y_pred_class)
+TP = confusion[1, 1]
+TN = confusion[0, 0]
+FP = confusion[0, 1]
+FN = confusion[1, 0]
+
+#' popular mertrics computed from a confusion matrix below
+#' classification accuracy:
+#' note need one number as float for true devision,vs. integer division.
+#' accuracy_score method does the exact same thing
+print((TP + TN) / float(TP + TN + FP + FN))
+print(metrics.accuracy_score(y_test, y_pred_class))
+#' classification error: aka misclassification rate
+print((FP + FN) / float(TP + TN + FP + FN))
+print(1 - metrics.accuracy_score(y_test, y_pred_class))
+#' sensitivity:when actual value is positive, how often is prediction correct, aka recall_score
+print(TP / float(TP + FN))
+print(metrics.recall_score(y_test, y_pred_class))
+#' specificity: when actual value is neg, how often is the prediction correct. want to maximize this
+print(TN / float(TN + FP))
+#' false positive rate:
+print(FP / float(TN + FP))
+#' precision: when a positive value is predicted, how often is the prediction correct?
+print(TP / float(TP + FP))
+print(metrics.precision_score(y_test, y_pred_class))
+
+#' Confusion matrix gives you a more complete picture of how your classifier is performing
+#' Also allows you to compute various classification metrics, and these metrics can guide your model selection
+
+#' we can adjust classification thresholds
+print(logreg.predict(X_test)[0:10]) # first 10 predicted responses
+#' print the first 10 predicted probabilities of class membership, row=observations, cols=class 0,1
+#' can be used to rank observations by predicted prob of diabetes and prioritize patient outreach.
+print(logreg.predict_proba(X_test)[0:10, :])
+#' print the first 10 predicted probabilities for class 1
+print(logreg.predict_proba(X_test)[0:10, 1])
+#' store the predicted probabilities for class 1, using all data
+y_pred_prob = logreg.predict_proba(X_test)[:, 1]
+import matplotlib.pyplot as plt
+#' histogram of predicted probabilities
+plt.hist(y_pred_prob, bins=8)
+plt.xlim(0, 1)
+plt.title('Histogram of predicted probabilities')
+plt.xlabel('Predicted probability of diabetes')
+plt.ylabel('Frequency')
+plt.show()
+
+#' note prediction threshold is set to 0.5, can adjust sensitivity and specificity by adjusting this
+#' predict diabetes if the predicted probability is greater than 0.3
+from sklearn.preprocessing import binarize
+y_pred_class = binarize([y_pred_prob], 0.3)[0]
+print(y_pred_prob[0:10]) # first 10 predicted probabilities
+print(y_pred_class[0:10]) # first 10 predicted classes with the lower threshold
+print(confusion) # previous confusion matrix (default threshold of 0.5)
+print(metrics.confusion_matrix(y_test, y_pred_class)) # threshold of 0.3
+print(46 / float(46 + 16))# sensitivity has increased (used to be 0.24)
+print(80 / float(80 + 50)) # specificity has decreased (used to be 0.91)
+
+#' note, threshold adjustment is the last step you take in model building process
+#' majority of time should be spent selecting better models and choosing the best model
+#' can use ROC curve to see how sensitivity and specificity are affected by various thresholds, without actually changing the threshold.
+
+fpr, tpr, thresholds = metrics.roc_curve(y_test, y_pred_prob)
+plt.plot(fpr, tpr)
+plt.xlim([0.0, 1.0])
+plt.ylim([0.0, 1.0])
+plt.title('ROC curve for diabetes classifier')
+plt.xlabel('False Positive Rate (1 - Specificity)')
+plt.ylabel('True Positive Rate (Sensitivity)')
+plt.grid(True)
+plt.show()
+#' graph tells us, if you choose sensitivity of 0.9, must accept specificity of 0.6
+
+#' lets define a function that accepts a threshold and prints sensitivity and specificity
+def evaluate_threshold(threshold):
+    print('Sensitivity:', tpr[thresholds > threshold][-1])
+    print('Specificity:', 1 - fpr[thresholds > threshold][-1])
+evaluate_threshold(0.5)
+evaluate_threshold(0.3)
+
+#' AUC is % of the ROC plot under the curve
+#' AUC is useful as a single number summary of classifier performance.
+#' higher AUC is indicative of a better classifier, can be used as alternative to classification accuracy
+print(metrics.roc_auc_score(y_test, y_pred_prob))
+#' If you randomly chose one positive and one negative observation, AUC represents the likelihood that your classifier will assign a higher predicted probability to the positive observation.
+#' AUC is useful even when there is high class imbalance (unlike classification accuracy).
+#' in this scenario, AUC would be a useful evaluation metric, whereas classification accuracy, would not.
+#' calculate cross-validated AUC
+from sklearn.model_selection import cross_val_score
+print(cross_val_score(logreg, X, y, cv=10, scoring='roc_auc').mean())
+#' main advantage of ROC and AUC, don't require you to choose classification threshold unlike confusion matrix. however, they are less interpretable than confusion matrix, for multiclass problems
