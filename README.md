@@ -18,4 +18,6 @@ sklearn
 
 see requirements.txt
 
+contact: @b_suarez1
+
 
